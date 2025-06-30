@@ -1,10 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-// ✅ Use Vite-compatible env variable
-const apiKey = import.meta.env.VITE_API_KEY;
+// Use `process.env.API_KEY` as required by the execution environment.
+const apiKey = process.env.API_KEY;
 
 if (!apiKey) {
-    throw new Error("VITE_API_KEY environment variable not set");
+    throw new Error("API_KEY environment variable not set.");
 }
 
 const ai = new GoogleGenAI({ apiKey });
