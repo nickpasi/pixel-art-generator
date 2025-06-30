@@ -1,13 +1,34 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Use `process.env.API_KEY` as required by the execution environment.
-const apiKey = process.env.API_KEY;
+// Use `process.env.GEMINI_API_KEY` as this appears to be the correct variable for the execution environment based on user context.
+const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-    throw new Error("API_KEY environment variable not set.");
+    throw new Error("GEMINI_API_KEY environment variable not set.");
 }
 
 const ai = new GoogleGenAI({ apiKey });
+
+/**
+ * Handles API errors by attempting to parse a JSON message for better readability.
+ */
+function handleApiError(error: unknown, context: string): never {
+    console.error(`Error in ${context}:`, error);
+    if (error instanceof Error) {
+        let message = error.message;
+        try {
+            // The error message from the SDK might be a JSON string.
+            const errorObj = JSON.parse(message);
+            if (errorObj?.error?.message) {
+                message = errorObj.error.message;
+            }
+        } catch (e) {
+            // Not a JSON message, use as is.
+        }
+        throw new Error(`Failed during ${context}: ${message}`);
+    }
+    throw new Error(`An unknown error occurred during ${context}.`);
+}
 
 /**
  * Describes an image using the Gemini model.
@@ -35,11 +56,7 @@ export const describeImage = async (base64Data: string, mimeType: string): Promi
 
         return response.text;
     } catch (error) {
-        console.error("Error describing image:", error);
-        if (error instanceof Error) {
-            throw new Error(`Failed to describe image: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred during image description.");
+        handleApiError(error, "image description");
     }
 };
 
@@ -80,11 +97,7 @@ export const generatePixelArt = async (
             throw new Error("No image was generated. The response may be empty or contain safety blocks.");
         }
     } catch (error) {
-        console.error("Error generating image:", error);
-        if (error instanceof Error) {
-            throw new Error(`Failed to generate image: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred during image generation.");
+        handleApiError(error, "image generation");
     }
 };
 
@@ -130,10 +143,6 @@ Example output: [
         }
 
     } catch (error) {
-        console.error("Error getting prompt suggestions:", error);
-        if (error instanceof Error) {
-            throw new Error(`Failed to get suggestions: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred while getting suggestions.");
+        handleApiError(error, "getting suggestions");
     }
 };
