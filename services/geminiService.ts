@@ -1,10 +1,11 @@
+
 import { GoogleGenAI } from "@google/genai";
 
-// Use `process.env.GEMINI_API_KEY` as this appears to be the correct variable for the execution environment based on user context.
-const apiKey = process.env.GEMINI_API_KEY;
+// Use `process.env.API_KEY` as this is the standard required by the guidelines.
+const apiKey = process.env.API_KEY;
 
 if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable not set.");
+    throw new Error("API_KEY environment variable not set. Please set it in your deployment environment.");
 }
 
 const ai = new GoogleGenAI({ apiKey });
@@ -16,14 +17,17 @@ function handleApiError(error: unknown, context: string): never {
     console.error(`Error in ${context}:`, error);
     if (error instanceof Error) {
         let message = error.message;
+        // The error from the SDK can be a raw JSON string. Let's try to parse it.
         try {
-            // The error message from the SDK might be a JSON string.
-            const errorObj = JSON.parse(message);
-            if (errorObj?.error?.message) {
-                message = errorObj.error.message;
+            // Check if the message is a JSON string.
+            if (message.trim().startsWith('{')) {
+                const errorObj = JSON.parse(message);
+                if (errorObj?.error?.message) {
+                    message = errorObj.error.message.replace(/\[.*?\]\s/g, ''); // Clean up "[GoogleGenerativeAI Error]: " prefix
+                }
             }
         } catch (e) {
-            // Not a JSON message, use as is.
+            // Not a JSON message, use the original message.
         }
         throw new Error(`Failed during ${context}: ${message}`);
     }
